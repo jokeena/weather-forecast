@@ -89,6 +89,48 @@ namespace TwoWeekProject.Controllers
         private string GetTemperatureColor(string summary)
             => _temperatureColors.GetValueOrDefault(summary, "#333333");
 
+        // Activities logic converted from TypeScript
+        private string[] GetActivitiesForWeather(int tempF, string summary)
+        {
+            var lowerSummary = summary.ToLower();
+
+            if (tempF >= 85)
+                return new[] { "Swimming", "Beach volleyball", "Ice cream shopping", "Water parks", "Outdoor BBQ" };
+            else if (tempF >= 70)
+                return new[] { "Hiking", "Picnicking", "Outdoor sports", "Gardening", "Cycling" };
+            else if (tempF >= 50)
+                return new[] { "Walking", "Photography", "Outdoor markets", "Light jogging", "Sightseeing" };
+            else if (tempF >= 32)
+                return new[] { "Indoor activities", "Museums", "Coffee shops", "Shopping malls", "Movies" };
+            else
+            {
+                if (lowerSummary.Contains("snow"))
+                    return new[] { "Sledding", "Snowball fights", "Building snowmen", "Ice skating", "Hot chocolate" };
+                return new[] { "Indoor games", "Reading", "Cozy cafes", "Board games", "Warm baths" };
+            }
+        }
+
+        // Clothing logic converted from TypeScript
+        private string[] GetClothingForWeather(int tempF, string summary)
+        {
+            var lowerSummary = summary.ToLower();
+
+            if (tempF >= 85)
+                return new[] { "T-shirt", "Shorts", "Sandals", "Sunglasses", "Hat" };
+            else if (tempF >= 70)
+                return new[] { "Light shirt", "Jeans/pants", "Sneakers", "Light jacket (evening)" };
+            else if (tempF >= 50)
+                return new[] { "Long sleeves", "Pants", "Light jacket", "Closed shoes" };
+            else if (tempF >= 32)
+                return new[] { "Sweater", "Warm jacket", "Long pants", "Boots", "Scarf" };
+            else
+            {
+                if (lowerSummary.Contains("snow"))
+                    return new[] { "Heavy coat", "Winter boots", "Gloves", "Warm hat", "Thermal layers" };
+                return new[] { "Winter coat", "Warm layers", "Boots", "Gloves", "Beanie" };
+            }
+        }
+
         [HttpGet(Name = "GetWeatherForecast")] // marks method as handling HTTP GET requests.
         public IEnumerable<WeatherForecast> Get() // public method named Get, returns a collection of WeatherForecast objects.
         {
@@ -109,7 +151,9 @@ namespace TwoWeekProject.Controllers
                     Summary = summary,
                     FormattedDate = FormatDate(date), // Fix: Use the local 'date' variable here.
                     SummaryEmoji = GetSummaryEmoji(summary),
-                    TemperatureColor = GetTemperatureColor(summary)
+                    TemperatureColor = GetTemperatureColor(summary),
+                    Activities = GetActivitiesForWeather(tempF, summary),
+                    Clothing = GetClothingForWeather(tempF, summary)
                 };
             })
             .ToArray();

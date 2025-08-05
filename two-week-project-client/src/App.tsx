@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 import { getWeather, type WeatherForecast } from './services/WeatherService';
 
@@ -13,6 +11,9 @@ function App() {
   const [weather, setWeather] = useState<WeatherForecast[]>([]) 
 
   const [userLocation, setUserLocation] = useState<string>("");
+  
+  // State to track which cards are flipped (using date as key)
+  const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     getUserLocation()
@@ -68,6 +69,19 @@ function App() {
     });
   };
 
+  // Function to toggle card flip
+  const toggleCardFlip = (date: string) => {
+    setFlippedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(date)) {
+        newSet.delete(date);
+      } else {
+        newSet.add(date);
+      }
+      return newSet;
+    });
+  };
+
     return (
       /* 
       This component is rendered twice. The intial render happens before the useEffect is triggered. Thus an empty ul is returned, because weather = [].
@@ -80,18 +94,51 @@ function App() {
         <h2 style={{ margin: 0, paddingTop: 20 }}>{'\uD83D\uDCCD'}{userLocation}</h2>
       </div>
         <div className="weather-container">
-          {weather.map(item => ( // weather.map(item => ( iterates over each weather item. React requires an unique key for list items (item.date). Every item's (WeatherForecast object) temperature is displayed
-            <div key={item.date} className="weather-card">
-              <div className="weather-date">{item.formattedDate}</div>
-              <div className="weather-temp" style={{ color: item.temperatureColor }}>
-                {item.temperatureF}{'\u00B0'}F
+          {weather.map(item => {
+            const isFlipped = flippedCards.has(item.date);
+            
+            return (
+              <div key={item.date} className={`weather-card ${isFlipped ? 'flipped' : ''}`} onClick={() => toggleCardFlip(item.date)}>
+                <div className="card-inner">
+                  {/* Front of the card */}
+                  <div className="card-front">
+                    <div className="weather-date">{item.formattedDate}</div>
+                    <div className="weather-temp" style={{ color: item.temperatureColor }}>
+                      {item.temperatureF}{'\u00B0'}F
+                    </div>
+                    <div className="weather-summary" style={{ color: item.temperatureColor }}>
+                      {item.summary}
+                    </div>
+                    <div className="weather-emoji">{item.summaryEmoji}</div>
+                    <div className="flip-hint">Click to see activities!</div>
+                  </div>
+                  
+                  {/* Back of the card */}
+                  <div className="card-back">
+                    <div className="weather-date">{item.formattedDate}</div>
+                    
+                    <div className="activities-section">
+                      <h4>🎯 Activities</h4>
+                      <ul>
+                        {item.activities.slice(0, 3).map((activity, index) => (
+                          <li key={index}>{activity}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div className="clothing-section">
+                      <h4>👕 What to Wear</h4>
+                      <ul>
+                        {item.clothing.slice(0, 3).map((clothingItem, index) => (
+                          <li key={index}>{clothingItem}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="weather-summary" style={{ color: item.temperatureColor }}>
-                {item.summary}
-              </div>
-              <div className="weather-emoji">{item.summaryEmoji}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </>
     )

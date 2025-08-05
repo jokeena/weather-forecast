@@ -12,6 +12,8 @@ export interface WeatherForecast {
     formattedDate : string;
     summaryEmoji : string;
     temperatureColor: string;
+    activities: string[];
+    clothing: string[];
 }
 
 // export makes it available to other files (as a constant). Asynchronous function that returns a promise that resolves to an array of WeatherForecast objects.

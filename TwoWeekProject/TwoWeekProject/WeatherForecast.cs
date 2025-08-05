@@ -13,5 +13,8 @@ namespace TwoWeekProject
         public string FormattedDate { get; set; }
         public string SummaryEmoji { get; set; }
         public string TemperatureColor { get; set; }
+
+        public string[] Activities { get; set; }
+        public string[] Clothing { get; set; }
     }
 }
