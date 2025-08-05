@@ -12,9 +12,16 @@ namespace TwoWeekProject
 
         public string FormattedDate { get; set; }
         public string SummaryEmoji { get; set; }
+
+        public string WeatherEmoji { get; set; }
         public string TemperatureColor { get; set; }
 
         public string[] Activities { get; set; }
         public string[] Clothing { get; set; }
+
+        public string WeatherIconDescriptor { get; set; }
+
+        public string WeatherIconClass { get; set; }
+        public string WeatherIconColor { get; set; }
     }
 }

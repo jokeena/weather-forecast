@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Font Awesome local files
+fontawesome/
+public/fontawesome/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

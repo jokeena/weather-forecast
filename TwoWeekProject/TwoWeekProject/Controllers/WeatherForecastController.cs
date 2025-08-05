@@ -131,6 +131,61 @@ namespace TwoWeekProject.Controllers
             }
         }
 
+        private string GetRandomWeatherEmoji(int tempF)
+        {
+            // 1/3 chance of precipitation
+            bool hasPrecipitation = Random.Shared.Next(3) == 0;
+
+            if (hasPrecipitation)
+            {
+                if (tempF <= 32)
+                {
+                    return "\u2744";
+                }
+                else
+                {
+                    // Randomly pick rain or thunderstorm
+                    return Random.Shared.Next(2) == 0 ? "\U0001F327" : "\u26C8";
+                }
+            }
+            else
+            {
+                // Randomly pick sunny, cloudy, or partly sunny (all colored)
+                var options = new[] { "\U0001F31E", "\U0001F324", "\U0001F325" };
+                return options[Random.Shared.Next(options.Length)];
+            }
+        }
+
+        private (string descriptor, string iconClass, string color) GetFontAwesomeWeatherIcon(int tempF)
+        {
+            // 1/3 chance of precipitation
+            bool hasPrecipitation = Random.Shared.Next(3) == 0;
+
+            if (hasPrecipitation)
+            {
+                if (tempF <= 32)
+                {
+                    return ("Snow", "fa-solid fa-snowflake", "#74C0FC"); // Snow
+                }
+                else
+                {
+                    return Random.Shared.Next(2) == 0
+                        ? ("Rain", "fa-solid fa-cloud-rain", "#74C0FC") // Rain
+                        : ("Thunderstorms", "fa-solid fa-cloud-bolt", "#74C0FC");      // Thunderstorm
+                }
+            }
+            else
+            {
+                var options = new[]
+                {
+                    ("Sunny","fa-solid fa-sun", "#FFD700"),         // Sunny
+                    ("Cloudy","fa-solid fa-cloud", "#B0C4DE"),       // Cloudy
+                    ("Partly Cloudy","fa-solid fa-cloud-sun", "#FFD700")    // Partly Sunny
+                };
+                return options[Random.Shared.Next(options.Length)];
+            }
+        }
+
         [HttpGet(Name = "GetWeatherForecast")] // marks method as handling HTTP GET requests.
         public IEnumerable<WeatherForecast> Get() // public method named Get, returns a collection of WeatherForecast objects.
         {
@@ -144,20 +199,26 @@ namespace TwoWeekProject.Controllers
 
                 var date = DateTime.Now.AddDays(index); // Fix: Declare a local variable 'date' to hold the DateTime value.
 
-                return new WeatherForecast
-                {
-                    Date = DateOnly.FromDateTime(date),
-                    TemperatureC = tempC,
-                    Summary = summary,
-                    FormattedDate = FormatDate(date), // Fix: Use the local 'date' variable here.
-                    SummaryEmoji = GetSummaryEmoji(summary),
-                    TemperatureColor = GetTemperatureColor(summary),
-                    Activities = GetActivitiesForWeather(tempF, summary),
-                    Clothing = GetClothingForWeather(tempF, summary)
-                };
-            })
-            .ToArray();
-            // generates 5 WeatherForecast objects, returned as an array. For each number a new WeatherForecast is created, todays data plus index days, random tempC, and a summary that matches the temperature.
-        }
-    }
-}
+                var (iconDescriptor, iconClass, iconColor) = GetFontAwesomeWeatherIcon(tempF);
+
+            return new WeatherForecast
+            {
+                Date = DateOnly.FromDateTime(date),
+                                TemperatureC = tempC,
+                                Summary = summary,
+                                FormattedDate = FormatDate(date), // Fix: Use the local 'date' variable here.
+                                SummaryEmoji = GetSummaryEmoji(summary),
+                                TemperatureColor = GetTemperatureColor(summary),
+                                Activities = GetActivitiesForWeather(tempF, summary),
+                                Clothing = GetClothingForWeather(tempF, summary),
+                                WeatherEmoji = GetRandomWeatherEmoji(tempF),
+                                WeatherIconDescriptor = iconDescriptor,
+                                WeatherIconClass = iconClass,
+                                WeatherIconColor = iconColor,
+                            };
+                        })
+                        .ToArray();
+                        // generates 5 WeatherForecast objects, returned as an array. For each number a new WeatherForecast is created, todays data plus index days, random tempC, and a summary that matches the temperature.
+                    }
+                }
+            }
