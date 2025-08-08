@@ -6,7 +6,7 @@ const BASE_URL = 'https://localhost:7298';
 // API endpoints
 const ENDPOINTS = {
   weatherForecast: `${BASE_URL}/weatherforecast`,
-  weatherMap: `${BASE_URL}/weathermap`,
+  weatherMap: `${BASE_URL}/weathermap`
   // Future endpoints can be added here
   // weatherAlerts: `${BASE_URL}/weatheralerts`,
 } as const;
@@ -19,7 +19,6 @@ export interface WeatherForecast {
     summary: string;
     formattedDate : string;
     summaryEmoji : string;
-    weatherEmoji : string;
     temperatureColor: string;
     activities: string[];
     clothing: string[];

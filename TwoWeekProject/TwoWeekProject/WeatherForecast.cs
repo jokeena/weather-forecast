@@ -6,14 +6,13 @@ namespace TwoWeekProject
 
         public int TemperatureC { get; set; }
 
-        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+        public int TemperatureF { get; set; }
 
         public string? Summary { get; set; }
 
         public string FormattedDate { get; set; }
         public string SummaryEmoji { get; set; }
 
-        public string WeatherEmoji { get; set; }
         public string TemperatureColor { get; set; }
 
         public string[] Activities { get; set; }

@@ -131,31 +131,6 @@ namespace TwoWeekProject.Controllers
             }
         }
 
-        private string GetRandomWeatherEmoji(int tempF)
-        {
-            // 1/3 chance of precipitation
-            bool hasPrecipitation = Random.Shared.Next(3) == 0;
-
-            if (hasPrecipitation)
-            {
-                if (tempF <= 32)
-                {
-                    return "\u2744";
-                }
-                else
-                {
-                    // Randomly pick rain or thunderstorm
-                    return Random.Shared.Next(2) == 0 ? "\U0001F327" : "\u26C8";
-                }
-            }
-            else
-            {
-                // Randomly pick sunny, cloudy, or partly sunny (all colored)
-                var options = new[] { "\U0001F31E", "\U0001F324", "\U0001F325" };
-                return options[Random.Shared.Next(options.Length)];
-            }
-        }
-
         private (string descriptor, string iconClass, string color) GetFontAwesomeWeatherIcon(int tempF)
         {
             // 1/3 chance of precipitation
@@ -186,39 +161,101 @@ namespace TwoWeekProject.Controllers
             }
         }
 
-        [HttpGet(Name = "GetWeatherForecast")] // marks method as handling HTTP GET requests.
-        public IEnumerable<WeatherForecast> Get() // public method named Get, returns a collection of WeatherForecast objects.
-        {
-            return Enumerable.Range(1, 5).Select(index =>
-            {
-                var tempC = Random.Shared.Next(-20, 55);
-                var tempF = 32 + (int)(tempC / 0.5556); // calculate Fahrenheit for summary selection
+        private (string descriptor, string iconClass, string color) GetFontAwesomeWeatherIconFromCode(int weatherCode)
+{
+    // Open-Meteo weathercode mapping: https://open-meteo.com/en/docs#api_form
+    // Example mapping (expand as needed):
+    return weatherCode switch
+    {
+        0 => ("Sunny", "fa-solid fa-sun", "#FFD700"), // Clear sky
+        1 or 2 => ("Partly Cloudy", "fa-solid fa-cloud-sun", "#FFD700"), // Mainly clear, partly cloudy
+        3 => ("Cloudy", "fa-solid fa-cloud", "#B0C4DE"), // Overcast
+        45 or 48 => ("Foggy", "fa-solid fa-smog", "#B0C4DE"), // Fog
+        51 or 53 or 55 or 56 or 57 => ("Rain", "fa-solid fa-cloud-rain", "#74C0FC"), // Drizzle
+        61 or 63 or 65 or 66 or 67 => ("Rain", "fa-solid fa-cloud-rain", "#74C0FC"), // Rain
+        71 or 73 or 75 or 77 or 85 or 86 => ("Snow", "fa-solid fa-snowflake", "#74C0FC"), // Snow
+        80 or 81 or 82 => ("Rain", "fa-solid fa-cloud-showers-heavy", "#74C0FC"), // Rain showers
+        95 or 96 or 99 => ("Thunderstorm", "fa-solid fa-cloud-bolt", "#FFD700"), // Thunderstorm
+        _ => ("Unknown", "fa-solid fa-question", "#333333")
+    };
+}
 
-                // choose summary based on temperature in Fahrenheit
+        [HttpGet(Name = "GetWeatherForecast")] // marks method as handling HTTP GET requests.
+        public async Task<IEnumerable<WeatherForecast>> Get() // public method named Get, returns a collection of WeatherForecast objects.
+        {
+            double latitude = 42.2808;
+            double longitude = -83.7430;
+
+            var dailyWeather = await GetNext7DaysWeatherAsync(latitude, longitude);
+
+            // Use only the first 5 days
+            return dailyWeather.Take(5).Select(dw =>
+            {
+                var tempF = (int)dw.TemperatureMaxF;
+                var tempC = (int)((tempF - 32) * 0.5556);
                 string summary = DetermineSummary(tempF);
 
-                var date = DateTime.Now.AddDays(index); // Fix: Declare a local variable 'date' to hold the DateTime value.
+                var (iconDescriptor, iconClass, iconColor) = GetFontAwesomeWeatherIconFromCode(dw.WeatherCode);
 
-                var (iconDescriptor, iconClass, iconColor) = GetFontAwesomeWeatherIcon(tempF);
+                return new WeatherForecast
+                {
+                    Date = dw.Date,
+                    TemperatureC = tempC,
+                    TemperatureF = tempF,
+                    Summary = summary,
+                    FormattedDate = FormatDate(dw.Date.ToDateTime(TimeOnly.MinValue)),
+                    SummaryEmoji = GetSummaryEmoji(summary),
+                    TemperatureColor = GetTemperatureColor(summary),
+                    Activities = GetActivitiesForWeather(tempF, summary),
+                    Clothing = GetClothingForWeather(tempF, summary),
+                    WeatherIconDescriptor = iconDescriptor,
+                    WeatherIconClass = iconClass,
+                    WeatherIconColor = iconColor,
+                };
+            })
+            .ToArray();
+        }
+        
+        private async Task<List<DailyWeather>> GetNext7DaysWeatherAsync(double latitude, double longitude)
+        {
+            using var httpClient = new HttpClient();
+            string url = $"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&daily=temperature_2m_max,temperature_2m_min,weathercode&temperature_unit=fahrenheit&forecast_days=7&timezone=auto";
+            var response = await httpClient.GetAsync(url);
 
-            return new WeatherForecast
+            var dailyList = new List<DailyWeather>();
+
+            if (!response.IsSuccessStatusCode)
+                return dailyList;
+
+            var json = await response.Content.ReadAsStringAsync();
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("daily", out var daily))
             {
-                Date = DateOnly.FromDateTime(date),
-                                TemperatureC = tempC,
-                                Summary = summary,
-                                FormattedDate = FormatDate(date), // Fix: Use the local 'date' variable here.
-                                SummaryEmoji = GetSummaryEmoji(summary),
-                                TemperatureColor = GetTemperatureColor(summary),
-                                Activities = GetActivitiesForWeather(tempF, summary),
-                                Clothing = GetClothingForWeather(tempF, summary),
-                                WeatherEmoji = GetRandomWeatherEmoji(tempF),
-                                WeatherIconDescriptor = iconDescriptor,
-                                WeatherIconClass = iconClass,
-                                WeatherIconColor = iconColor,
-                            };
-                        })
-                        .ToArray();
-                        // generates 5 WeatherForecast objects, returned as an array. For each number a new WeatherForecast is created, todays data plus index days, random tempC, and a summary that matches the temperature.
-                    }
+                var dates = daily.GetProperty("time");
+                var maxTemps = daily.GetProperty("temperature_2m_max");
+                var minTemps = daily.GetProperty("temperature_2m_min");
+                var weatherCodes = daily.GetProperty("weathercode");
+
+                for (int i = 0; i < dates.GetArrayLength(); i++)
+                {
+                    var date = DateOnly.Parse(dates[i].GetString()!);
+                    var maxF = maxTemps[i].GetDouble();
+                    var minF = minTemps[i].GetDouble();
+                    var code = weatherCodes[i].GetInt32();
+
+                    dailyList.Add(new DailyWeather
+                    {
+                        Date = date,
+                        TemperatureMaxF = maxF,
+                        TemperatureMinF = minF,
+                        WeatherCode = code
+                    });
                 }
             }
+
+            return dailyList;
+        }
+    }
+}

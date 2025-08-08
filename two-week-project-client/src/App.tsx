@@ -35,7 +35,7 @@ function App() {
   setWeather only takes WeatherForecast[] as input, which triggers a rerender of the component with the new state. 
   weather will always be an array of WeatherForecast objects and setWeather will only accept WeatherForecast[] as input, due to useState<WeatherForecast[]>. 
   */
-  const [weather, setWeather] = useState<WeatherForecast[]>([]) 
+  const [weather, setWeather] = useState<WeatherForecast[]>([])
 
   const [userLocation, setUserLocation] = useState<string>("");
 
@@ -49,14 +49,19 @@ function App() {
   }, []);
 
   /*
-  useEffect is run last. The useState is run first, and initializes weather.
-  Then, the return is exectued, which returns an empty ul list with no li elements, because weather is []. 
-  After the return, useEffect is triggered, updating the ul with the data from the HTTP GET and the updated weather state.
+  useEffect fetches weather forecast data and sets it to state.
   */
   useEffect(() => { 
-    //getWeather is called, we trigger an HTTP GET request to API, when that returns we update the weather State using setWeather.
-    getWeather().then(setWeather).catch(console.error);
+    const fetchWeatherData = async () => {
+      try {
+        const forecastData = await getWeather();
+        setWeather(forecastData);
+      } catch (error) {
+        console.error('Error fetching weather data:', error);
+      }
+    };
 
+    fetchWeatherData();
   }, []); // Empty [] ensures this only runs once after initial render.
 
   const getUserLocation = async (): Promise<string> => {
